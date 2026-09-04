@@ -1,61 +1,38 @@
 .DEFAULT_GOAL := help
 
-COMPOSE = docker compose
+.PHONY: help up build down down-v logs shell test openapi
 
-.PHONY: help up down build rebuild logs ps shell-backend shell-frontend db test lint lint-fix clean
+help: ## Exibe os comandos disponíveis
+	@echo Comandos disponiveis:
+	@echo   make up       - sobe a aplicacao (docker compose up -d --build)
+	@echo   make build    - builda os containers
+	@echo   make down     - derruba os containers
+	@echo   make down-v   - derruba e remove volumes
+	@echo   make logs     - exibe logs do backend
+	@echo   make shell    - abre shell no container backend
+	@echo   make test     - roda a suite de testes PHP
+	@echo   make openapi  - regenera o public/openapi.json
 
-help: ## Show available commands
-	@echo Available commands:
-	@echo   make up            Start backend, database and frontend
-	@echo   make down          Stop all services
-	@echo   make build         Build Docker images
-	@echo   make rebuild       Rebuild images and restart services
-	@echo   make logs          Tail logs from all services
-	@echo   make ps            List running containers
-	@echo   make shell-backend Open bash inside the backend container
-	@echo   make shell-frontend Open sh inside the frontend container
-	@echo   make db            Open MySQL as root inside the database container
-	@echo   make test          Run tests (not configured yet)
-	@echo   make lint          Check code style (php-cs-fixer dry-run + phpcs)
-	@echo   make lint-fix      Auto-fix code style and re-check with phpcs
-	@echo   make clean         Stop and remove containers, networks and volumes
+up: ## Sobe a aplicação
+	docker compose up -d --build
 
-up: ## Start backend, database and frontend
-	if not exist .env copy .env.example .env
-	$(COMPOSE) up -d
+build: ## Builda os containers
+	docker compose build
 
-down: ## Stop all services
-	$(COMPOSE) down
+down: ## Derruba os containers
+	docker compose down
 
-build: ## Build Docker images
-	$(COMPOSE) build
+down-v: ## Derruba e remove volumes
+	docker compose down -v
 
-rebuild: ## Rebuild images and restart services
-	$(COMPOSE) up -d --build
+logs: ## Exibe logs do backend
+	docker compose logs -f backend
 
-logs: ## Tail logs from all services
-	$(COMPOSE) logs -f
+shell: ## Abre um shell no container backend
+	docker compose exec backend sh
 
-ps: ## List running containers
-	$(COMPOSE) ps
+test: ## Roda a suite de testes PHP
+	docker run --rm -v "$(CURDIR)/backend:/app" -w /app composer:2 php vendor/bin/phpunit
 
-shell-backend: ## Open bash inside the backend container
-	$(COMPOSE) exec backend bash
-
-shell-frontend: ## Open sh inside the frontend container
-	$(COMPOSE) exec frontend sh
-
-db: ## Open MySQL as root inside the database container
-	$(COMPOSE) exec db mysql -uroot -prootpass
-
-test: ## Run PHP unit tests
-	$(COMPOSE) exec backend sh -c "composer install && ./vendor/bin/phpunit"
-
-lint: ## Check code style (php-cs-fixer dry-run + phpcs)
-	$(COMPOSE) exec backend sh -c "composer install && ./vendor/bin/php-cs-fixer fix --dry-run --diff && ./vendor/bin/phpcs"
-
-lint-fix: ## Auto-fix code style with php-cs-fixer and re-check with phpcs
-	$(COMPOSE) exec backend sh -c "composer install && ./vendor/bin/php-cs-fixer fix && ./vendor/bin/phpcs"
-
-clean: ## Stop and remove containers, networks and volumes
-	$(COMPOSE) down -v
+openapi: ## Regenera o public/openapi.json
+	docker run --rm -v "$(CURDIR)/backend:/app" -w /app composer:2 php vendor/bin/openapi src -o public/openapi.json

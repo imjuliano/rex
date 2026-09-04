@@ -31,7 +31,20 @@ Acesse:
 |---|---|---|
 | Frontend (React + Vite) | http://localhost:5173 | - |
 | Backend (API PHP) | http://localhost:8080 | - |
+| Swagger UI | http://localhost:8080/docs/index.html | - |
 | MySQL | `localhost:3306` / `db:3306` | `rex` / `rex` |
+
+### Documentação interativa (Swagger)
+
+Acesse http://localhost:8080/docs/index.html com a aplicação rodando. Para testar endpoints protegidos:
+
+1. Expanda `Auth > POST /auth/login` e clique em **Try it out**.
+2. Envie o payload de login (ex: `admin@rex.test` / `admin123`).
+3. Copie o `data.token` da resposta.
+4. Clique no botão **Authorize** (cadeado no topo) e informe `Bearer <token>`.
+5. Feche o modal — os demais endpoints passarão o header automaticamente.
+
+> `POST /auth/refresh` e `POST /auth/logout` dependem do cookie `HttpOnly`, então podem não funcionar pelo Swagger UI em alguns navegadores. Use Postman/Insomnia ou curl com `-c cookies.txt -b cookies.txt` para esses dois.
 
 ## Variáveis de ambiente
 
@@ -59,6 +72,23 @@ Para remover os dados do banco:
 
 ```bash
 docker compose down -v
+```
+
+---
+
+## Makefile
+
+Um `Makefile` está disponível na raiz para abstrair os comandos mais comuns:
+
+```bash
+make up       # docker compose up -d --build
+make down     # docker compose down
+make build    # docker compose build
+make logs     # docker compose logs -f backend
+make shell    # docker compose exec backend sh
+make test     # roda a suite de testes PHP
+make openapi  # regenera o public/openapi.json
+make help     # lista os comandos
 ```
 
 ---
@@ -483,9 +513,6 @@ Um CSV de exemplo fica servido em `http://localhost:8080/sales-sample.csv` e pod
 
 - Testes automatizados (PHPUnit) para os filtros de listagem; hoje há cobertura do motor de pontuação e do fluxo de autenticação.
 - Cursor-based pagination nas listagens que tendem a crescer muito (`sales`, `wallet_entries`); offset degrada em tabelas grandes.
-- Índices compostos guiados por `EXPLAIN` para os filtros mais usados (`sales(campaign_id, status, created_at)`).
 - Tela de sessões ativas, para o usuário revogar um dispositivo específico em vez de todos de uma vez.
 - Job de limpeza dos `refresh_tokens` expirados. Hoje a poda acontece por usuário no login, o que basta, mas deixa lixo de contas inativas.
-- Lock entre abas (`BroadcastChannel`) para serializar o refresh, o que permitiria remover a janela de tolerância de 10s.
-- Extrair as queries de `Application` para repositórios, que é o próximo passo natural agora que filtro e paginação já estão isolados.
-- Makefile e scripts auxiliares para seed/rollback.
+- Extrair as queries de Application para repositórios, que é o próximo passo agora que filtro e paginação já estão isolados
