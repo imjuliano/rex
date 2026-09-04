@@ -1,0 +1,69 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Exception;
+
+/**
+ * Canonical, machine-readable error codes.
+ *
+ * Clients should branch on these instead of parsing human messages,
+ * which are free to change without breaking the contract.
+ */
+enum ErrorCode: string {
+    // 400 — malformed or invalid input
+    case INVALID_JSON_BODY   = 'INVALID_JSON_BODY';
+    case MISSING_FIELD       = 'MISSING_FIELD';
+    case INVALID_FIELD       = 'INVALID_FIELD';
+    case NO_FIELDS_TO_UPDATE = 'NO_FIELDS_TO_UPDATE';
+    case VALUE_TOO_LONG      = 'VALUE_TOO_LONG';
+    case VALUE_OUT_OF_RANGE  = 'VALUE_OUT_OF_RANGE';
+    case DATE_IN_THE_PAST    = 'DATE_IN_THE_PAST';
+
+    // 401 / 403 — identity and access
+    case MISSING_TOKEN       = 'MISSING_TOKEN';
+    case INVALID_TOKEN       = 'INVALID_TOKEN';
+    case INVALID_CREDENTIALS = 'INVALID_CREDENTIALS';
+    case FORBIDDEN_ROLE      = 'FORBIDDEN_ROLE';
+    case MISSING_REFRESH_TOKEN = 'MISSING_REFRESH_TOKEN';
+    case INVALID_REFRESH_TOKEN = 'INVALID_REFRESH_TOKEN';
+    case REFRESH_TOKEN_REUSED  = 'REFRESH_TOKEN_REUSED';
+
+    // 404 — resource lookup
+    case ROUTE_NOT_FOUND     = 'ROUTE_NOT_FOUND';
+    case SALE_NOT_FOUND      = 'SALE_NOT_FOUND';
+    case PRODUCT_NOT_FOUND   = 'PRODUCT_NOT_FOUND';
+    case CAMPAIGN_NOT_FOUND  = 'CAMPAIGN_NOT_FOUND';
+    case SELLER_NOT_FOUND    = 'SELLER_NOT_FOUND';
+    case USER_NOT_FOUND      = 'USER_NOT_FOUND';
+
+    // 409 — conflicting state
+    case DUPLICATE_SKU       = 'DUPLICATE_SKU';
+    case DUPLICATE_ENTRY     = 'DUPLICATE_ENTRY';
+    case SALE_ALREADY_EXISTS = 'SALE_ALREADY_EXISTS';
+    case SALE_ALREADY_CANCELED = 'SALE_ALREADY_CANCELED';
+    case CAMPAIGN_ALREADY_CLOSED = 'CAMPAIGN_ALREADY_CLOSED';
+    case CONCURRENT_UPDATE   = 'CONCURRENT_UPDATE';
+    case DUPLICATE_EMAIL     = 'DUPLICATE_EMAIL';
+    case SELF_DELETION       = 'SELF_DELETION';
+
+    // 422 — semantically valid but violates a business rule
+    case INSUFFICIENT_BUDGET   = 'INSUFFICIENT_BUDGET';
+    case CAMPAIGN_NOT_ACTIVE   = 'CAMPAIGN_NOT_ACTIVE';
+    case CAMPAIGN_OUT_OF_PERIOD = 'CAMPAIGN_OUT_OF_PERIOD';
+    case PRODUCT_INACTIVE      = 'PRODUCT_INACTIVE';
+    case NEGATIVE_BUDGET       = 'NEGATIVE_BUDGET';
+    case BUDGET_BELOW_COMMITTED = 'BUDGET_BELOW_COMMITTED';
+    case LEDGER_INCONSISTENT   = 'LEDGER_INCONSISTENT';
+
+    // 500 / 503 — infrastructure
+    case DATABASE_UNAVAILABLE = 'DATABASE_UNAVAILABLE';
+    case DATABASE_ERROR       = 'DATABASE_ERROR';
+    case INTERNAL_ERROR       = 'INTERNAL_ERROR';
+    case CSV_STREAM_OPEN_FAILED = 'CSV_STREAM_OPEN_FAILED';
+    case CSV_STREAM_READ_FAILED = 'CSV_STREAM_READ_FAILED';
+    case AUDIT_ENCRYPTION_KEY_MISSING = 'AUDIT_ENCRYPTION_KEY_MISSING';
+    case AUDIT_ENCRYPTION_FAILED    = 'AUDIT_ENCRYPTION_FAILED';
+    case AUDIT_DECRYPTION_FAILED    = 'AUDIT_DECRYPTION_FAILED';
+    case AUDIT_INVALID_ENCRYPTED_DATA = 'AUDIT_INVALID_ENCRYPTED_DATA';
+    case CONFIGURATION_MISSING      = 'CONFIGURATION_MISSING';
+}
