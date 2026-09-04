@@ -1,0 +1,14 @@
+# Ambiente
+.env
+
+# Dependências
+backend/vendor/
+frontend/node_modules/
+
+# Cache e artefatos
+.phpunit.cache
+frontend/dist/
+*.log
+
+# Volumes Docker
+db_data/

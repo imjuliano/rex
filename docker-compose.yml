@@ -1,0 +1,62 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: rex_db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-rex}
+      MYSQL_USER: ${MYSQL_USER:-rex}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-rex}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./db/logs-init.sql:/docker-entrypoint-initdb.d/02-logs.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpass}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: rex_backend
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_NAME: ${DB_NAME:-rex}
+      LOG_DB_NAME: ${LOG_DB_NAME:-rex_logs}
+      DB_USER: ${DB_USER:-rex}
+      DB_PASSWORD: ${DB_PASSWORD:-rex}
+      JWT_SECRET: ${JWT_SECRET:-rex-super-secret-jwt-key-change-in-production}
+      AUDIT_LOG_ENCRYPTION_KEY: ${AUDIT_LOG_ENCRYPTION_KEY:-rex-audit-default-key-change-me}
+      APP_ENV: ${APP_ENV:-production}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+      REFRESH_COOKIE_SAMESITE: ${REFRESH_COOKIE_SAMESITE:-Lax}
+      REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-false}
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/var/www/html/src
+
+  frontend:
+    build: ./frontend
+    container_name: rex_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
