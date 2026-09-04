@@ -173,7 +173,6 @@ make help     # lista tudo
 ## O que faria diferente com mais tempo
 
 - Testes automatizados (PHPUnit) nos filtros de listagem e motor de pontuação.
-- Cursor-based pagination para `sales` e `wallet_entries`.
 - Tela de sessões ativas para revogação por dispositivo.
-- Job periódico de limpeza de `refresh_tokens` expirados.
-- Extrair as queries de `Application` para repositórios dedicados.
+- Job periódico de limpeza de refresh_tokens expirados.
+- Extrair as queries de Application para repositórios dedicados.
