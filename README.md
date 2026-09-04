@@ -9,6 +9,7 @@ Plataforma enxuta de incentivo de vendas. O admin cadastra produtos, campanhas c
 - `make` (opcional, para os aliases)
 
 Não é necessário instalar PHP, MySQL, Node ou Composer localmente.
+Há credenciais padrões pra executar o sistema de primeira ao buildar (como pede no desafio). Isso não pode ir pra produção, é só pra testar o fluxo do sistema.
 
 ## Como rodar
 
@@ -33,7 +34,7 @@ A primeira execução demora alguns minutos para baixar imagens e instalar depen
 | Swagger UI | http://localhost:8080/docs/index.html | - |
 | MySQL | `localhost:3306` | `rex` / `rex` |
 
-## Credenciais de seed
+## Credenciais de seed 
 
 | Email | Senha | Papel |
 |---|---|---|
