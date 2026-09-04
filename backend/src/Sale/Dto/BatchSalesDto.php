@@ -5,7 +5,15 @@ namespace App\Sale\Dto;
 
 use App\Sale\Exception\SaleBatchMissingException;
 use App\Sale\Exception\SaleBatchRowInvalidException;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    title: 'BatchSalesRequest',
+    required: ['sales'],
+    properties: [
+        new OA\Property(property: 'sales', type: 'array', items: new OA\Items(ref: CreateSaleDto::class)),
+    ],
+)]
 final class BatchSalesDto {
     /** @var list<CreateSaleDto> */
     public readonly array $sales;
