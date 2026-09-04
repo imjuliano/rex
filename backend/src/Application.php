@@ -6,7 +6,6 @@ namespace App;
 use App\Application\Exception\JwtSecretMissingException;
 use App\Audit\AuditEncryptor;
 use App\Audit\AuditLogDispatcher;
-use App\Audit\LogEntity;
 use App\Audit\Controller\AuditController;
 use App\Audit\Mapper\AuditLogMapper;
 use App\Audit\MySqlAuditLogRepository;
@@ -42,6 +41,9 @@ use App\Exception\ExceptionHandler;
 use App\Exception\ValidationException;
 use App\Http\QueryParams;
 use PDO;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionNamedType;
 use Throwable;
 
 class Application {
@@ -199,40 +201,78 @@ class Application {
     }
 
     private function registerRoutes(): void {
-        $this->router->add('POST', '/auth/login', fn(array $p) => $this->authController->login($this->jsonBody()), null);
-        // Both are cookie-authenticated: they must work once the access token expired.
-        $this->router->add('POST', '/auth/refresh', fn(array $p) => $this->authController->refresh(), null);
-        $this->router->add('POST', '/auth/logout', fn(array $p) => $this->authController->logout(), null);
+        $this->registerController($this->authController);
+        $this->registerController($this->productController);
+        $this->registerController($this->campaignController);
+        $this->registerController($this->saleController);
+        $this->registerController($this->userController);
+        $this->registerController($this->auditController);
+        $this->registerController($this->walletController);
+    }
 
-        $this->router->add('GET', '/products', fn(array $p) => $this->productController->list($this->query), ['admin', 'seller']);
-        $this->router->add('POST', '/products', fn(array $p) => $this->productController->create($this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('PUT', '/products/{id}', fn(array $p) => $this->productController->update((int) $p['id'], $this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('DELETE', '/products/{id}', fn(array $p) => $this->productController->deactivate((int) $p['id'], $this->currentActor()), ['admin']);
-        $this->router->add('POST', '/products/{id}/delete', fn(array $p) => $this->productController->softDelete((int) $p['id'], $this->currentActor()), ['admin']);
+    private function registerController(object $controller): void {
+        $ref = new ReflectionClass($controller);
+        foreach ($ref->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            foreach ($method->getAttributes(Route::class) as $attr) {
+                $route = $attr->newInstance();
+                $this->router->add(
+                    $route->method,
+                    $route->path,
+                    fn(array $p) => $this->invokeAction([$controller, $method->getName()], $p),
+                    $route->roles,
+                );
+            }
+        }
+    }
 
-        $this->router->add('GET', '/campaigns', fn(array $p) => $this->campaignController->list($this->query), ['admin']);
-        $this->router->add('POST', '/campaigns', fn(array $p) => $this->campaignController->create($this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('PUT', '/campaigns/{id}', fn(array $p) => $this->campaignController->update((int) $p['id'], $this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('DELETE', '/campaigns/{id}', fn(array $p) => $this->campaignController->close((int) $p['id'], $this->currentActor()), ['admin']);
+    private function invokeAction(callable $action, array $params): void {
+        $ref = new ReflectionMethod($action[0], $action[1]);
+        $args = [];
+        foreach ($ref->getParameters() as $param) {
+            $type = $param->getType();
+            $typeName = $type instanceof ReflectionNamedType ? $type->getName() : null;
+            $name = $param->getName();
 
-        $this->router->add('GET', '/sales', fn(array $p) => $this->saleController->list($this->query), ['admin']);
-        $this->router->add('GET', '/sales/export', fn(array $p) => $this->saleController->export($this->query), ['admin']);
-        $this->router->add('POST', '/sales', fn(array $p) => $this->saleController->create($this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('POST', '/sales/batch', fn(array $p) => $this->saleController->batch($this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('POST', '/sales/{external_id}/cancel', fn(array $p) => $this->saleController->cancel($p['external_id'], $this->currentActor()), ['admin']);
+            if ($typeName === QueryParams::class) {
+                $args[] = $this->query;
+                continue;
+            }
 
-        $this->router->add('GET', '/users', fn(array $p) => $this->userController->list($this->query), ['admin']);
-        $this->router->add('POST', '/users', fn(array $p) => $this->userController->create($this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('PUT', '/users/{id}', fn(array $p) => $this->userController->update((int) $p['id'], $this->jsonBody(), $this->currentActor()), ['admin']);
-        $this->router->add('DELETE', '/users/{id}', fn(array $p) => $this->userController->softDelete((int) $p['id'], $this->currentActor()), ['admin']);
+            if ($typeName === 'array' && $name === 'body') {
+                $args[] = $this->jsonBody();
+                continue;
+            }
 
-        $this->router->add('GET', '/audit/products', fn(array $p) => $this->auditController->list($this->query, LogEntity::PRODUCT), ['admin']);
-        $this->router->add('GET', '/audit/campaigns', fn(array $p) => $this->auditController->list($this->query, LogEntity::CAMPAIGN), ['admin']);
-        $this->router->add('GET', '/audit/sales', fn(array $p) => $this->auditController->list($this->query, LogEntity::SALE), ['admin']);
-        $this->router->add('GET', '/audit/users', fn(array $p) => $this->auditController->list($this->query, LogEntity::USER), ['admin']);
-        $this->router->add('GET', '/audit/auth', fn(array $p) => $this->auditController->list($this->query, LogEntity::AUTH), ['admin']);
+            if ($typeName === 'array' && $name === 'actor') {
+                $args[] = $this->currentActor();
+                continue;
+            }
 
-        $this->router->add('GET', '/me/wallet', fn(array $p) => $this->walletController->list($this->query, (int) $this->currentActor()['id']), ['seller']);
+            if ($typeName !== null && enum_exists($typeName) && is_a($typeName, \BackedEnum::class, true)) {
+                $enumRef = new \ReflectionEnum($typeName);
+                $backing = $enumRef->getBackingType()?->getName();
+                $raw = $backing === 'int' ? (int) $value : (string) $value;
+                $args[] = $typeName::from($raw);
+                continue;
+            }
+
+            $pathParamAttr = $param->getAttributes(PathParam::class)[0] ?? null;
+            $paramName = $pathParamAttr?->newInstance()->name ?? $this->camelToSnake($name);
+
+            $value = $params[$paramName] ?? null;
+            if ($typeName === 'int') {
+                $args[] = (int) $value;
+            } elseif ($typeName === 'string') {
+                $args[] = (string) $value;
+            } else {
+                $args[] = $value;
+            }
+        }
+        ($action)(...$args);
+    }
+
+    private function camelToSnake(string $value): string {
+        return strtolower((string) preg_replace('/(?<!^)[A-Z]/', '_$0', $value));
     }
 
     // ------------------------------------------------------------- plumbing
