@@ -8,7 +8,18 @@ use App\User\Exception\UserPasswordTooShortException;
 use App\User\UserRole;
 use App\Validation\Assert;
 use App\Validation\Limits;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    title: 'CreateUserRequest',
+    required: ['name', 'email', 'password', 'role'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'email', type: 'string', format: 'email'),
+        new OA\Property(property: 'password', type: 'string', format: 'password', minLength: 8),
+        new OA\Property(property: 'role', type: 'string', enum: ['admin', 'seller']),
+    ],
+)]
 final class CreateUserDto {
     public function __construct(
         public readonly string $name,
