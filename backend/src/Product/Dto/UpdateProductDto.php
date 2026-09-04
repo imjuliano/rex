@@ -6,7 +6,18 @@ namespace App\Product\Dto;
 use App\Product\Exception\ProductNoFieldsToUpdateException;
 use App\Validation\Assert;
 use App\Validation\Limits;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    title: 'UpdateProductRequest',
+    description: 'Payload para atualização parcial de um produto.',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', maxLength: 100, example: 'Smartphone X Pro'),
+        new OA\Property(property: 'sku', type: 'string', maxLength: 100, example: 'PHONE-001-PRO'),
+        new OA\Property(property: 'points_per_unit', type: 'integer', minimum: 0, example: 75),
+        new OA\Property(property: 'active', type: 'boolean', example: true),
+    ],
+)]
 final class UpdateProductDto {
     public function __construct(
         public readonly ?string $name = null,

@@ -5,7 +5,19 @@ namespace App\Product\Dto;
 
 use App\Validation\Assert;
 use App\Validation\Limits;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    title: 'CreateProductRequest',
+    description: 'Payload para criação de um produto no catálogo.',
+    required: ['name', 'sku', 'points_per_unit'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', maxLength: 100, example: 'Smartphone X'),
+        new OA\Property(property: 'sku', type: 'string', maxLength: 100, example: 'PHONE-001'),
+        new OA\Property(property: 'points_per_unit', type: 'integer', minimum: 0, example: 50),
+        new OA\Property(property: 'active', type: 'boolean', example: true),
+    ],
+)]
 final class CreateProductDto {
     public function __construct(
         public readonly string $name,
