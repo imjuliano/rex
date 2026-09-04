@@ -4,7 +4,16 @@ declare(strict_types=1);
 namespace App\Auth\Dto;
 
 use App\Validation\Assert;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    title: 'LoginRequest',
+    required: ['email', 'password'],
+    properties: [
+        new OA\Property(property: 'email', type: 'string', format: 'email'),
+        new OA\Property(property: 'password', type: 'string', format: 'password'),
+    ],
+)]
 final class LoginDto {
     public function __construct(
         public readonly string $email,
