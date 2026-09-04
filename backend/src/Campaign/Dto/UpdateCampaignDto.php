@@ -9,7 +9,18 @@ use App\Campaign\Exception\CampaignNoFieldsToUpdateException;
 use App\Validation\Assert;
 use App\Validation\Limits;
 use DateTimeImmutable;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    title: 'UpdateCampaignRequest',
+    properties: [
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'budget_total', type: 'integer', minimum: 0),
+        new OA\Property(property: 'starts_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'ends_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'status', type: 'string', enum: ['active', 'closed']),
+    ],
+)]
 final class UpdateCampaignDto {
     public function __construct(
         public readonly ?string $name = null,
